@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Shield, LogOut, MapPin, Clock, AlertTriangle, X, Send } from 'lucide-react'
 
-export default function GuardDashboard({session}:{session:any}){
+export default function GuardDashboard(_props:{session:any}){
   const [guard,setGuard]=useState<any>(null)
   const [assignedSite,setAssignedSite]=useState<any>(null)
   const [activeLog,setActiveLog]=useState<any>(null)
