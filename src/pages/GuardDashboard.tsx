@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Shield, LogOut, MapPin, Clock, AlertTriangle, X, Send, Image as ImageIcon, Timer } from 'lucide-react'
 
-export default function GuardDashboard(){
+type GuardDashboardProps = {
+  session?: any
+}
+
+export default function GuardDashboard({ session }: GuardDashboardProps){
   const [guard,setGuard]=useState<any>(null)
   const [assignedSite,setAssignedSite]=useState<any>(null)
   const [activeLog,setActiveLog]=useState<any>(null)
@@ -45,7 +49,12 @@ export default function GuardDashboard(){
   useEffect(()=>{
     (async()=>{
       try{
-        const { data: { user } } = await supabase.auth.getUser()
+        const userId = session?.user?.id
+        let user = session?.user
+        if(!user){
+          const { data: { user: fetchedUser } } = await supabase.auth.getUser()
+          user = fetchedUser
+        }
         if(!user) throw new Error("No auth user")
         const { data: guardData, error } = await supabase.from('guards').select('*').eq('auth_user_id', user.id).maybeSingle()
         if(error) throw error
@@ -68,11 +77,10 @@ export default function GuardDashboard(){
         }
       }catch(e:any){ setError(e.message) } finally{ setLoadingGuard(false) }
     })()
-  },[])
+  },[session])
 
   const handleLogout = async () => { await supabase.auth.signOut(); localStorage.clear(); location.reload() }
 
-  // FIXED: Writes to ALL possible column names
   const checkIn = async () => {
     if(!guard?.site_id) return alert('⚠️ No site assigned yet.')
     setLoadingAction(true)
@@ -97,7 +105,6 @@ export default function GuardDashboard(){
     }catch(e:any){ alert('Check-in failed: ' + e.message) } finally{ setLoadingAction(false) }
   }
 
-  // FIXED: Writes to BOTH check_out and check_out_time so never NULL
   const checkOut = async () => {
     if(!activeLog) return
     setLoadingAction(true)
@@ -219,7 +226,6 @@ export default function GuardDashboard(){
           </div>
         </div>
 
-        {/* FIXED: Shows CHECK-IN time logically, even if 0 min */}
         <div style={{marginTop:16, background:'#fff', borderRadius:16, padding:16, border:'1px solid #e2e8f0'}}>
           <div style={{fontWeight:900, borderBottom:'3px solid #0f172a', paddingBottom:8, fontSize:13, display:'flex', justifyContent:'space-between'}}><span>TODAY'S ACTIVITY</span><span style={{color:'#16a34a', fontSize:11}}>{history.length} LOGS</span></div>
           {history.length === 0 ? <div style={{fontSize:13, color:'#94a3b8', padding:'16px 0', textAlign:'center'}}>No activity yet</div> : history.slice(0,5).map((h:any)=>{
